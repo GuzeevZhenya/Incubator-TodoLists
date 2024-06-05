@@ -8,7 +8,10 @@ import {
   removeTodolistTC,
   todolistsActions,
 } from "../../features/TodolistsList/todolists.reducer";
-import { addTaskTC, removeTaskTC, updateTaskTC } from "../../features/TodolistsList/tasks.reducer";
+import {
+  removeTaskTC,
+  tasksThunk,
+} from "../../features/TodolistsList/tasks.reducer";
 import { TaskStatuses } from "../../api/todolists-api";
 import { Grid, Paper } from "@mui/material";
 import { AddItemForm } from "../../components/AddItemForm/AddItemForm";
@@ -39,26 +42,45 @@ export const TodolistsList: React.FC<PropsType> = ({ demo = false }) => {
   }, []);
 
   const removeTask = useCallback(function (taskId: string, todolistId: string) {
-    const thunk = removeTaskTC({taskId, todolistId});
+    const thunk = removeTaskTC({ taskId, todolistId });
     dispatch(thunk);
   }, []);
 
   const addTask = useCallback(function (title: string, todolistId: string) {
-    const thunk = addTaskTC(title, todolistId);
+    const thunk = tasksThunk.addTask({ title, todolistId });
     dispatch(thunk);
   }, []);
 
-  const changeStatus = useCallback(function (id: string, status: TaskStatuses, todolistId: string) {
-    const thunk = updateTaskTC(id, { status }, todolistId);
+  const changeStatus = useCallback(function (
+    id: string,
+    status: TaskStatuses,
+    todolistId: string
+  ) {
+    const thunk = tasksThunk.updateTask({
+      taskId: id,
+      domainModel: { status },
+      todolistId: todolistId,
+    });
     dispatch(thunk);
   }, []);
 
-  const changeTaskTitle = useCallback(function (id: string, newTitle: string, todolistId: string) {
-    const thunk = updateTaskTC(id, { title: newTitle }, todolistId);
+  const changeTaskTitle = useCallback(function (
+    id: string,
+    newTitle: string,
+    todolistId: string
+  ) {
+    const thunk = tasksThunk.updateTask({
+      taskId: id,
+      domainModel: { title: newTitle },
+      todolistId: todolistId,
+    });
     dispatch(thunk);
   }, []);
 
-  const changeFilter = useCallback(function (filter: FilterValuesType, id: string) {
+  const changeFilter = useCallback(function (
+    filter: FilterValuesType,
+    id: string
+  ) {
     dispatch(todolistsActions.changeTodolistFilter({ id, filter }));
   }, []);
 
@@ -90,7 +112,7 @@ export const TodolistsList: React.FC<PropsType> = ({ demo = false }) => {
         <AddItemForm addItem={addTodolist} />
       </Grid>
       <Grid container spacing={3}>
-        {todolists.map((tl:any) => {
+        {todolists.map((tl: any) => {
           let allTodolistTasks = tasks[tl.id];
 
           return (
