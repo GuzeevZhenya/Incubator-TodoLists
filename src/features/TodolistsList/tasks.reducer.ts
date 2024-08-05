@@ -2,7 +2,12 @@ import { TaskPriorities, TaskStatuses, TaskType, todolistsAPI, UpdateTaskModelTy
 import { AppDispatch, AppRootStateType, AppThunk } from "app/store";
 import { handleServerAppError, handleServerNetworkError } from "utils/error-utils";
 import { appActions } from "app/app.reducer";
-import { todolistsActions } from "features/TodolistsList/todolists.reducer";
+import {
+  addTodolists,
+  fetchTodolists,
+  removeTodolists,
+  todolistsActions,
+} from "features/TodolistsList/todolists.reducer";
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { clearTasksAndTodolists } from "common/actions/common.actions";
 import { createAppAsyncThunk } from "utils/createAppAsyncThunk";
@@ -84,17 +89,6 @@ const slice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(todolistsActions.addTodolist, (state, action) => {
-        state[action.payload.todolist.id] = [];
-      })
-      .addCase(todolistsActions.removeTodolist, (state, action) => {
-        delete state[action.payload.id];
-      })
-      .addCase(todolistsActions.setTodolists, (state, action) => {
-        action.payload.todolists.forEach((tl) => {
-          state[tl.id] = [];
-        });
-      })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state[action.payload.todolistId] = action.payload.tasks;
       })
@@ -106,6 +100,17 @@ const slice = createSlice({
       .addCase(addTask.fulfilled, (state, action: PayloadAction<{ task: TaskType }>) => {
         const tasks = state[action.payload.task.todoListId];
         tasks.unshift(action.payload.task);
+      })
+      .addCase(removeTodolists.fulfilled, (state, action) => {
+        delete state[action.payload.id];
+      })
+      .addCase(fetchTodolists.fulfilled, (state, action) => {
+        action.payload.todolists.forEach((tl) => {
+          state[tl.id] = [];
+        });
+      })
+      .addCase(addTodolists.fulfilled, (state, action) => {
+        state[action.payload.todolist.id] = [];
       })
       .addCase(clearTasksAndTodolists, () => {
         return {};
@@ -119,7 +124,6 @@ const updateTask = createAppAsyncThunk<updateTaskType, updateTaskType>(
   `${slice.name}/updateTask`,
   async (arg, thunkApi) => {
     const { dispatch, rejectWithValue, getState } = thunkApi;
-
     try {
       const state = getState();
       const task = state.tasks[arg.todolistId].find((t) => t.id === arg.taskId);
