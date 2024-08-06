@@ -1,5 +1,5 @@
 import { TaskPriorities, TaskStatuses, TaskType, todolistsAPI, UpdateTaskModelType } from "api/todolists-api";
-import { AppDispatch, AppRootStateType, AppThunk } from "app/store";
+import { AppDispatch, AppRootStateType } from "app/store";
 import { handleServerAppError, handleServerNetworkError } from "utils/error-utils";
 import { appActions } from "app/app.reducer";
 import {
@@ -79,13 +79,7 @@ const slice = createSlice({
         model: UpdateDomainTaskModelType;
         todolistId: string;
       }>,
-    ) => {
-      const tasks = state[action.payload.todolistId];
-      const index = tasks.findIndex((t) => t.id === action.payload.taskId);
-      if (index !== -1) {
-        tasks[index] = { ...tasks[index], ...action.payload.model };
-      }
-    },
+    ) => {},
   },
   extraReducers: (builder) => {
     builder
@@ -111,6 +105,13 @@ const slice = createSlice({
       })
       .addCase(addTodolists.fulfilled, (state, action) => {
         state[action.payload.todolist.id] = [];
+      })
+      .addCase(updateTask.fulfilled, (state, action) => {
+        const tasks = state[action.payload.todolistId];
+        const index = tasks.findIndex((t) => t.id === action.payload.taskId);
+        if (index !== -1) {
+          tasks[index] = { ...tasks[index], ...action.payload.domainModel };
+        }
       })
       .addCase(clearTasksAndTodolists, () => {
         return {};
@@ -146,6 +147,7 @@ const updateTask = createAppAsyncThunk<updateTaskType, updateTaskType>(
       const res = await todolistsAPI.updateTask(arg.todolistId, arg.taskId, apiModel);
 
       if (res.data.resultCode === 0) {
+        console.log(arg);
         return arg;
       } else {
         handleServerAppError(res.data, dispatch);

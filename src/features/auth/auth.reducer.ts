@@ -1,7 +1,6 @@
 import { authAPI, LoginParamsType } from "api/todolists-api";
 import { handleServerAppError, handleServerNetworkError } from "utils/error-utils";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { AppThunk } from "app/store";
 import { appActions } from "app/app.reducer";
 import { clearTasksAndTodolists } from "common/actions/common.actions";
 import { createAppAsyncThunk } from "utils/createAppAsyncThunk";
@@ -25,28 +24,32 @@ const slice = createSlice({
   },
 });
 
-const login = createAppAsyncThunk<any, any>(`${slice.name}/login`, async (arg, thunkAPI) => {
-  const { dispatch, rejectWithValue } = thunkAPI;
-  try {
-    dispatch(appActions.setAppStatus({ status: "loading" }));
-    const res = await authAPI.login(arg);
-    console.log(arg);
-    if (res.data.resultCode === 0) {
-      dispatch(appActions.setAppStatus({ status: "succeeded" }));
-      return { isLoggedIn: true };
-    } else {
-      handleServerAppError(res.data, dispatch);
+const login = createAppAsyncThunk<{ isLoggedIn: boolean }, LoginParamsType>(
+  `${slice.name}/login`,
+  async (arg, thunkAPI) => {
+    const { dispatch, rejectWithValue } = thunkAPI;
+    try {
+      dispatch(appActions.setAppStatus({ status: "loading" }));
+      const res = await authAPI.login(arg);
+      console.log(arg);
+      if (res.data.resultCode === 0) {
+        dispatch(appActions.setAppStatus({ status: "succeeded" }));
+        return { isLoggedIn: true };
+      } else {
+        handleServerAppError(res.data, dispatch);
+        return rejectWithValue(null);
+      }
+    } catch (error) {
+      handleServerNetworkError(error, dispatch);
       return rejectWithValue(null);
     }
-  } catch (error) {
-    handleServerNetworkError(error, dispatch);
-    return rejectWithValue(null);
-  }
-});
+  },
+);
 
 const logout = createAppAsyncThunk<{ isLoggedIn: boolean }, void>(`${slice.name}/logout`, async (_, thunkAPI) => {
   const { dispatch, rejectWithValue } = thunkAPI;
   try {
+    dispatch(appActions.setAppStatus({ status: "loading" }));
     const res = await authAPI.logout();
 
     if (res.data.resultCode === 0) {
@@ -63,7 +66,7 @@ const logout = createAppAsyncThunk<{ isLoggedIn: boolean }, void>(`${slice.name}
   }
 });
 
-export const initializeApp = createAppAsyncThunk<{ isLoggedIn: boolean }, undefined>(
+export const initializeApp = createAppAsyncThunk<{ isLoggedIn: boolean }, void>(
   `${slice.name}/initialize`,
   async (_, thunkAPI) => {
     const { dispatch, rejectWithValue } = thunkAPI;
@@ -72,7 +75,7 @@ export const initializeApp = createAppAsyncThunk<{ isLoggedIn: boolean }, undefi
       if (res.data.resultCode === 0) {
         return { isLoggedIn: true };
       } else {
-        handleServerAppError(res.data, dispatch);
+        // handleServerAppError(res.data, dispatch);
         return rejectWithValue(null);
       }
     } catch (error) {
